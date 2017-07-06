@@ -11,7 +11,7 @@ my $usage = "
 To use : '$0'
 \ttype in the AF tables (more than 1) separated by space.\n
 ";
-@ARGV >= 2 or die $usage;
+@ARGV >= 1 or die $usage;
 
 # - - - - - G L O B A L V A R I A B L E S - - - - - - - - -
 my (%COMPARE, %header, @headerline, %ALTCOMPARE, %REFCOMPARE, %AFCOMPARE, %AFSCOMPARE, %ANN, %FUNC); 
