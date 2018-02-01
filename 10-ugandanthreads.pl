@@ -4,7 +4,7 @@ use threads;
 use Thread::Queue;
 #convert the 07-htrzygty_window to multiple threads
 
-my $files = `for i in \$(ls -1 ../ALLSNPS/*/hetero*txt); 
+my $files = `for i in \$(ls -1 ../SNPS/*/hetero*txt); 
 do 
 c=\$(echo \$i | awk -F'/' '{print \$2}'); 
 d=\$(echo \$i | awk -F'/' '{print \$3}');

@@ -4,12 +4,12 @@ use threads;
 use Thread::Queue;
 #convert the 07-htrzygty_window to multiple threads
 
-my $files = `for i in \$(ls -1 ../ONLYSNPs/EX*hetero*txt);
+my $files = `for i in \$(ls -1 EX*hetero*txt);
 do
-f=\$(echo \$i | awk -F'_' '{print \$1}');
-e=\$(echo \$f | awk -F'/' '{print \$3}');
+f=\$(echo \$i | awk -F'_' '{print \$2}');
+e=\$(echo \$f | awk -F'-' '{print \$1}');
 c=\$(echo \$i | awk -F'-' '{print \$2}');
-d=\$(echo \$i | awk -F'/' '{print \$2}');
+d=\$(echo \$i | awk -F'_' '{print \$1}');
 echo perl ~/SCRIPTS/rossgenotyping/07-htrzygty_window.pl -t \$i -f ~/.big_ten/Galgal5/Galgal-5.fa -w 10000 -s 5000 -o \$d\\_\$e\-\$c-10_50.txt;
 echo perl ~/SCRIPTS/rossgenotyping/07-htrzygty_window.pl -t \$i -f ~/.big_ten/Galgal5/Galgal-5.fa -w 20000 -s 10000 -o \$d\\_\$e\-\$c-20_10.txt;
 echo perl ~/SCRIPTS/rossgenotyping/07-htrzygty_window.pl -t \$i -f ~/.big_ten/Galgal5/Galgal-5.fa -w 30000 -s 15000 -o \$d\\_\$e\-\$c-30_15.txt;

@@ -179,12 +179,12 @@ foreach my $chrom (natsort keys %COMPARE) {
 			print OUT2 "$afaverage\t$afmedian\n";
 			
 			#Frequencies of AFs
-			if ($afaverage > 0.9) {	 #homo alt
+			if ($afaverage > 0.99) {	 #homo alt
 				print OUT3 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT3 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT3 "$afaverage\n";
 				$homoalt++;
-			} elsif ($afaverage < 0.1) { #homo ref
+			} elsif ($afaverage < 0.01) { #homo ref
 				print OUT4 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT4 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT4 "$afaverage\n";
@@ -196,12 +196,12 @@ foreach my $chrom (natsort keys %COMPARE) {
 				$hetero++;
 			}
 			
-			if ($afmedian > 0.9) { #homo alt
+			if ($afmedian > 0.99) { #homo alt
 				print OUT6 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT6 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT6 "$afaverage\n";
 				$medhomoalt++;
-			} elsif ($afmedian < 0.1) { #homo ref
+			} elsif ($afmedian < 0.01) { #homo ref
 				print OUT7 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT7 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT7 "$afaverage\n";
@@ -226,7 +226,7 @@ close OUT7;
 close OUT8;
 print "Finished\n";
 print "
-criteria 0.1;
+criteria 0.01;
 Average
 \t0/0 = $homoref
 \t0/1 = $hetero
