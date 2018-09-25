@@ -55,10 +55,10 @@ open(STDOUT, '>', "$std_out") or die "Log file doesn't exist";
 open(STDERR, '>', "$std_err") or die "Error file doesn't exist";
 
 ##### Global variables
-my ( %chrom, @variantfile, @heterozygosity, @regions);
+my ( %chrom, @variantfile, @heterozygosity, @allheterozygosity, @regions);
 my (%CHR, %GENOME, %REALGENOME, %header, %info, %GENENAME, %FUNCNAME);
 my (%AFmax, %AFmin, %SNPcount, %RUNTHRU, %NEWSTEP);
-my @chrstoremove = qw|W LGE64 16|;
+my @chrstoremove = qw|MG|; #fake
 my $sieve = 10; #filter windows. 
 
 ##### User variables
@@ -199,80 +199,82 @@ foreach my $files (@variantfile) {
 		} #end while
 		print "... Done ",`date`;
 	} #end if table file
-	elsif ($variantfile){ #if variant file
-		print "... Processing variant file => $files";
-		MAINV: while (<IN>){ chomp;
-			unless (/^#/){ #removing previous files
-				my @all = split /\t/;
-				if (exists $RUNTHRU{$all[0]}) {
-					my $ident = (int($all[1]/$step) * $step);
-					my $newident = $ident - $window;
-					my @array = map {$_; } sort {$a <=> $b} keys %{ $RUNTHRU{$all[0]} };
-					
-					my $selectfilter = $all[$header{"INFO"}]; #getting the allele frequency from the INFO column
-					my @info = split (/\;/, $selectfilter);
-					undef %info; #clean the info hash
-					foreach (@info) {
-						my @theinfo = split("\=", $_, 2);
-						$info{$theinfo[0]} = $theinfo[1];
-					}
-					
-					if ($newident < 0){$newident = 0};
-					foreach my $stepz ($NEWSTEP{$all[0]}{$newident}..@array){ #getting the index to search through
-						my ($first, $last) = split(/\-/,$RUNTHRU{$all[0]}{$stepz},2);
-						if ($all[1] >= $first && $all[1] <= $last) {
-							my $AF = $info{'AF'}; #getting the AF.
-							unless ($AF =~ /,/){ #removing multiple AF for 1 position
-								if ($AF < 0.01 || $AF > 0.99) {print "homozygous allele @ $all[0]:$all[1] won't be computed\n";}
-								else {
-									push my @newAF, $AF, 1-$AF;
-									my ($maxAF, $minAF)= &range(\@newAF);
-									$AFmin{$all[0]}{$stepz}= $AFmin{$all[0]}{$stepz} + $minAF;
-									$AFmax{$all[0]}{$stepz}= $AFmax{$all[0]}{$stepz} + $maxAF;
-									$SNPcount{$all[0]}{$stepz}++;
-								} #end if AF
-							} #end unless multiple AF
-						} #end if window region
-						elsif ($first > $all[1]){next MAINV;}
-					} #end foreach step
-				}
-			} #end unless
-			if (/^#CH/) { #get the header column
-				my @headerline = split /\t/;
-				foreach (0..$#headerline){ $header{$headerline[$_]} = $_; }	
-			}
-		} #end while
-		print "... Done ",`date`;
-	} #end if variant file
+	#elsif ($variantfile){ #if variant file
+	#	print "... Processing variant file => $files";
+	#	MAINV: while (<IN>){ chomp;
+	#		unless (/^#/){ #removing previous files
+	#			my @all = split /\t/;
+	#			if (exists $RUNTHRU{$all[0]}) {
+	#				my $ident = (int($all[1]/$step) * $step);
+	#				my $newident = $ident - $window;
+	#				my @array = map {$_; } sort {$a <=> $b} keys %{ $RUNTHRU{$all[0]} };
+	#				
+	#				my $selectfilter = $all[$header{"INFO"}]; #getting the allele frequency from the INFO column
+	#				my @info = split (/\;/, $selectfilter);
+	#				undef %info; #clean the info hash
+	#				foreach (@info) {
+	#					my @theinfo = split("\=", $_, 2);
+	#					$info{$theinfo[0]} = $theinfo[1];
+	#				}
+	#				
+	#				if ($newident < 0){$newident = 0};
+	#				foreach my $stepz ($NEWSTEP{$all[0]}{$newident}..@array){ #getting the index to search through
+	#					my ($first, $last) = split(/\-/,$RUNTHRU{$all[0]}{$stepz},2);
+	#					if ($all[1] >= $first && $all[1] <= $last) {
+	#						my $AF = $info{'AF'}; #getting the AF.
+	#						unless ($AF =~ /,/){ #removing multiple AF for 1 position
+	#							if ($AF < 0.01 || $AF > 0.99) {print "homozygous allele @ $all[0]:$all[1] won't be computed\n";}
+	#							else {
+	#								push my @newAF, $AF, 1-$AF;
+	#								my ($maxAF, $minAF)= &range(\@newAF);
+	#								$AFmin{$all[0]}{$stepz}= $AFmin{$all[0]}{$stepz} + $minAF;
+	#								$AFmax{$all[0]}{$stepz}= $AFmax{$all[0]}{$stepz} + $maxAF;
+	#								$SNPcount{$all[0]}{$stepz}++;
+	#							} #end if AF
+	#						} #end unless multiple AF
+	#					} #end if window region
+	#					elsif ($first > $all[1]){next MAINV;}
+	#				} #end foreach step
+	#			}
+	#		} #end unless
+	#		if (/^#CH/) { #get the header column
+	#			my @headerline = split /\t/;
+	#			foreach (0..$#headerline){ $header{$headerline[$_]} = $_; }	
+	#		}
+	#	} #end while
+	#	print "... Done ",`date`;
+	#} #end if variant file
 	else { die "Not matching variables\n"; }
 	my ($j,$i) = (0,0);
 	#computing windows & printing OUT
 	print "... Computing Heterozygosity ";
 	$outputfile ||="output.txt"; $fileout = @{ open_unique($outputfile) }[1];#outputfile name
-	open (OUT, ">", $fileout) or die;
+	open (OUT, ">", $fileout) or die "Cant open $fileout\n";
 	print OUT "CHROM\tSTART\tEND\tGENE\tFUNCTION\tSNPcount\tHeterozygosity\n";
-
+	open (OUTS, ">", "every_$fileout") or die "Cant open every_$fileout\n";
+	print OUTS "CHROM\tSTART\tEND\tGENE\tFUNCTION\tSNPcount\tHeterozygosity\n";
+	
 	foreach my $schr (natsort %SNPcount){
 		foreach my $stepy (sort {$a <=> $b} keys %{$SNPcount{$schr}}){
 			my $finalAF = $AFmin{$schr}{$stepy} + $AFmax{$schr}{$stepy};
+			my ($start, $end) = split(/\-/,$RUNTHRU{$schr}{$stepy});
+			my %alls = map {$_ => 1} split(",", $GENENAME{$schr}{$stepy});
+			my @array = map {$_; } sort {$a <=> $b} keys %alls ;
+			my $genes = join (",", @array);
+				
+			my %falls = map {$_ => 1} split(",", $FUNCNAME{$schr}{$stepy});
+			my @farray = map {$_; } sort {$a <=> $b} keys %falls ;
+			my $funcs = join (",", @farray);
+			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));
 			unless ($SNPcount{$schr}{$stepy} < $sieve ){
-				my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));
 				push @heterozygosity, $heterozygosity;
-				my ($start, $end) = split(/\-/,$RUNTHRU{$schr}{$stepy});
-				my %alls = map {$_ => 1} split(",", $GENENAME{$schr}{$stepy});
-				my @array = map {$_; } sort {$a <=> $b} keys %alls ;
-				my $genes = join (",", @array);
-				
-				my %falls = map {$_ => 1} split(",", $FUNCNAME{$schr}{$stepy});
-				my @farray = map {$_; } sort {$a <=> $b} keys %falls ;
-				my $funcs = join (",", @farray);
-				
+				push @allheterozygosity, $heterozygosity;
 				print OUT "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\n";
+				print OUTS "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\n";
 				$i++;
-				
-				#unless ($SNPcount{$schr}{$stepy} == $finalAF){ print "Dont match s$SNPcount{$schr}{$stepy}","c\ts$finalAF","c\n"; }
 			} else {
-				#print OUT "$schr\t$RUNTHRU{$schr}{$stepy}\t$finalAF\t$SNPcount{$schr}{$stepy}\n";
+				push @allheterozygosity, $heterozygosity;
+				print OUTS "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\n";
 				$j++;
 			}
 		}
@@ -286,10 +288,12 @@ foreach my $files (@variantfile) {
 	print "... Computing Z transformed heterozygosity ";
 	my $mean = &average(\@heterozygosity);
 	my $stddev = &stdev(\@heterozygosity);
-	my $fileout2 = "ZHresult-".$fileout; #outputfile name
+	my $allmean = &average(\@allheterozygosity);
+	my $allstddev = &stdev(\@allheterozygosity);
+	my $fileout2 = "ZHresult-$fileout"; #outputfile name
 	
 	open (OUT2, ">", $fileout2) or die;
-	my $fileout3 = "all_ZHresult-".$fileout; #outputfile name
+	my $fileout3 = "every_ZHresult-$fileout"; #outputfile name
 	open (OUT3, ">", $fileout3) or die;
 	print OUT2 "CHROM\tSTART\tEND\tGENE\tFUNCTION\tSNPcount\tHeterozygosity\tZHeterozygosity\n";
 	print OUT3 "CHROM\tSTART\tEND\tGENE\tFUNCTION\tSNPcount\tHeterozygosity\tZHeterozygosity\n";
@@ -298,7 +302,6 @@ foreach my $files (@variantfile) {
 		foreach my $stepy (sort {$a <=> $b} keys %{$SNPcount{$schr}}){
 			my $finalAF = $AFmin{$schr}{$stepy} + $AFmax{$schr}{$stepy};
 			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));
-			my $zh = sprintf("%.3f",(($heterozygosity - $mean)/$stddev));
 			my ($start, $end) = split(/\-/,$RUNTHRU{$schr}{$stepy});
 			my %alls = map {$_ => 1} split(",", $GENENAME{$schr}{$stepy});
 			my @array = map {$_; } sort {$a <=> $b || $a cmp $b} keys %alls ;
@@ -307,12 +310,16 @@ foreach my $files (@variantfile) {
 			my %falls = map {$_ => 1} split(",", $FUNCNAME{$schr}{$stepy});
 			my @farray = map {$_; } sort {$a <=> $b} keys %falls ;
 			my $funcs = join (",", @farray);
-				
+			
+			
 			unless ($SNPcount{$schr}{$stepy} < $sieve ){
+				my $zh = sprintf("%.3f",(($heterozygosity - $mean)/$stddev));
+				my $allzh = sprintf("%.3f",(($heterozygosity - $allmean)/$allstddev));
 				print OUT2 "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\t$zh\n";
-				print OUT3 "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\t$zh\n";
+				print OUT3 "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\t$allzh\n";
 			} else {
-				print OUT3 "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\t$zh\n";
+				my $allzh = sprintf("%.3f",(($heterozygosity - $allmean)/$allstddev));
+				print OUT3 "$schr\t$start\t$end\t$genes\t$funcs\t$SNPcount{$schr}{$stepy}\t$heterozygosity\t$allzh\n";
 			}
 		}
 	} #end foreach compute window
@@ -321,11 +328,14 @@ foreach my $files (@variantfile) {
 	
 	
 	#R scripts
-	open(IN, $fileout2) or die "Can't open $fileout2\n"; my @inputall = <IN>; close(IN);
-	$fileout2 = "forR-".$fileout; #outputfile name
+	my @allresults; push @allresults, $fileout2; push @allresults, $fileout3;
+	foreach my $infofile (@allresults) {
+		print $infofile; 
+		open(IN, $infofile) or die "Can't open $infofile\n"; my @inputall = <IN>; close(IN);
+	$fileout2 = "forR-".$infofile; #outputfile name
 	open (OUT, ">", $fileout2) or die;
-	my $originalfileout = "original_forR-$fileout"; open (OUT3, ">", $originalfileout) or die;
-	my $imptfileout = "impt-$fileout"; open (OUT2, ">", $imptfileout) or die;
+	my $originalfileout = "original_forR-$infofile"; open (OUT3, ">", $originalfileout) or die;
+	my $imptfileout = "impt-$infofile"; open (OUT2, ">", $imptfileout) or die;
 	my $header = shift @inputall;
 	$i = 0;
 	print OUT "No\t$header"; print OUT2 "$header"; print OUT3 "No\t$header";
@@ -340,14 +350,14 @@ foreach my $files (@variantfile) {
 	    foreach my $j (1..$#id-1){ print OUT $id[$j],"\t"; print OUT3 $id[$j],"\t";}
 	    print OUT3 $id[$#id],"\n";
 			if ($id[$#id] > 0){ $id[$#id] = $id[$#id]*-1; }
-	    if ($id[$#id] <= -4) {print OUT2 $for,"\n"; }
+	    if ($id[$#id] <= -2) {print OUT2 $for,"\n"; }
 	    print OUT $id[$#id],"\n";
 	  }
 	}
 	close (OUT); close (OUT2); close(OUT3);
 	
 	#picture
-	my $picture = "ZH-$fileout"; my $picture2 = "plot-$fileout";
+	my $picture = "ZH-$infofile"; my $picture2 = "plot-$infofile";
 	$picture =~ s/\..+$/\.png/g; $picture2 =~ s/\..+$/\.png/g;
 	my $path = $ENV{'PWD'};
 	my $R_code = <<"RCODE";
@@ -369,8 +379,8 @@ vals <- rep(c(1,2,3,4,5,6),round2((length(info\$CHROM)/6),0))
 p <- ggplot(data = info, aes(x = No, y = ZHeterozygosity, color=CHROM, label=GENE)) +
 	scale_colour_manual(values = vals) +
   geom_point(stat = "identity", size=0.5) + labs(x = "Chromosome", y=expression(ZH[ W]))
-if (min(info\$ZHeterozygosity) <= -6) { p = p + geom_hline(yintercept=c(-4,-6), color="darkgrey", linetype="dashed") 
-} else { p = p + geom_hline(yintercept=-4, color="darkgrey", linetype="dashed") }
+if (min(info\$ZHeterozygosity) <= -3) { p = p + geom_hline(yintercept=c(-2,-3), color="darkgrey", linetype="dashed") 
+} else { p = p + geom_hline(yintercept=-2, color="darkgrey", linetype="dashed") }
 p + 
   theme_classic() + 
   theme(axis.text.x = element_blank(),
@@ -378,7 +388,7 @@ p +
         panel.spacing = unit(0, "lines")) +
   theme(legend.position="none") +
   scale_x_continuous(expand = c(0, 0)) +
-  geom_text_repel(aes(label=ifelse(ZHeterozygosity<=-6,as.character(GENE),'')),size=3)
+  geom_text_repel(aes(label=ifelse(ZHeterozygosity<=-3,as.character(GENE),'')),size=3)
 dev.off()
 
 
@@ -400,7 +410,7 @@ RCODE
 	$R->startR;
 	$R->send($R_code);
 	$R->stopR();	
-	
+	}	
 } #end foreach input file
 
 print "... finished\n";
@@ -408,9 +418,9 @@ print "
 Output files:
 \t1. original output file provided: \"$fileout\" contains heterozygosity scores only.
 \t2. outputfile: \"ZHresult-$fileout\" contains addition ZH scores of those that pass the SNPcount.
-\t3. outputfile: \"all_ZHresult-$fileout\" contains all ZH scores of all the windows regardless of SNPcounts (note: this is inaccurate for those that fail SNPcount).
+\t3. outputfile: \"every_ZHresult-$fileout\" contains all ZH scores of all the windows regardless of SNPcounts (note: this is inaccurate for those that fail SNPcount).
 \t4. R compatible file: \"forR-$fileout\" to create waterfall plot (8 file).
-\t5. outputfile: \"impt-$fileout\" contains only ZHscroe that pass the SNPcount and has ZHscore < -4.
+\t5. outputfile: \"impt-$fileout\" contains only ZHscroe that pass the SNPcount and has ZHscore < -2.
 \t6. R compatible file: \"original_forR-$fileout\" to create histogram plot (7 file).
 \t7. histogram plot of all the ZHscores.
 \t8. waterfall plot of all the ZHscores.
@@ -506,3 +516,4 @@ sub stdev{
         my $std = ($sqtotal / (@$data-1)) ** 0.5;
         return $std;
 }
+
