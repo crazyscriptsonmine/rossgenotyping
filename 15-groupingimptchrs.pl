@@ -3,7 +3,7 @@ my ($count4, $count5, $count6) = (0,0,0);
 open (IN, $ARGV[0]);
 while (<IN>){
 $all = (split("\t",$_))[-1];
-if ($all <= -2){ $count4++; print $_; }
+if ($all <= -4){ $count4++; print $_; }
 if ($all <= -5){ $count5++; } #print $_; }
 if ($all <= -6){ $count6++; } #print $_; }
 }

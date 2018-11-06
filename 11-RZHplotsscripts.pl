@@ -38,10 +38,11 @@ info = read.table("$ARGV[1]", header=T)
 info\$CHROM <- factor(info\$CHROM, levels=unique(as.character(info\$CHROM)) )
 vals <- rep(c(1,2,3,4,5,6),round2((length(info\$CHROM)/6),0))
 p <- ggplot(data = info, aes(x = No, y = ZHeterozygosity, color=CHROM, label=GENE)) +
-	scale_colour_manual(values = vals) +
+	scale_colour_manual(values = vals) + ylim(-8,0) +
   geom_point(stat = "identity", size=0.5) + labs(x = "Chromosome", y=expression(ZH[ W]))
-if (min(info\$ZHeterozygosity) <= -6) { p = p + geom_hline(yintercept=c(-4,-6), color="black", linetype="dashed") 
-} else { p = p + geom_hline(yintercept=-4, color="black", linetype="dashed") }
+if (min(info\$ZHeterozygosity) <= -4) { p = p + geom_hline(yintercept=c(-4), color="black", linetype="dashed") 
+} 
+#else { p = p + geom_hline(yintercept=-4, color="black", linetype="dashed") }
 p + 
   theme_classic() + 
   theme(axis.text.x = element_blank(),

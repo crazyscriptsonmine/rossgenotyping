@@ -179,7 +179,7 @@ foreach my $chrom (natsort keys %COMPARE) {
 			print OUT2 "$afaverage\t$afmedian\n";
 			
 			#Frequencies of AFs
-			if ($afaverage > 0.9) {	 #homo alt
+			if ($afaverage >= 0.99) {	 #homo alt
 				print OUT3 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT3 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT3 "$afaverage\n";
@@ -196,7 +196,7 @@ foreach my $chrom (natsort keys %COMPARE) {
 				$hetero++;
 			}
 			
-			if ($afmedian > 0.9) { #homo alt
+			if ($afmedian >= 0.99) { #homo alt
 				print OUT6 "$chrom\t$position\t$REFCOMPARE{$chrom}{$position}\t$ALTCOMPARE{$chrom}{$position}\t";
 				if (exists $header{'GENE.REFGENE'}){ print OUT6 "$ANN{$chrom}{$position}\t$FUNC{$chrom}{$position}\t"; }
 				print OUT6 "$afaverage\n";
