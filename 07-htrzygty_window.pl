@@ -181,8 +181,9 @@ foreach my $files (@variantfile) {
 									} # end else getting the consequence
 									#end of getting the consequence information
 									
-									
-									push my @newAF, $AF, 1-$AF;
+									my @newAF; undef @newAF;
+									#if ($AF = 1){$AF=0.99;} # temporary
+									push @newAF, $AF, 1-$AF;
 									my ($maxAF, $minAF)= &range(\@newAF); #getting the maximum and minimum AF
 									$AFmin{$all[0]}{$stepz}= $AFmin{$all[0]}{$stepz} + $minAF;
 									$AFmax{$all[0]}{$stepz}= $AFmax{$all[0]}{$stepz} + $maxAF;
@@ -265,7 +266,7 @@ foreach my $files (@variantfile) {
 			my %falls = map {$_ => 1} split(",", $FUNCNAME{$schr}{$stepy});
 			my @farray = map {$_; } sort {$a <=> $b} keys %falls ;
 			my $funcs = join (",", @farray);
-			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));
+			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF))); #calculating heterozygosity
 			unless ($SNPcount{$schr}{$stepy} < $sieve ){
 				push @heterozygosity, $heterozygosity;
 				push @allheterozygosity, $heterozygosity;
@@ -301,7 +302,7 @@ foreach my $files (@variantfile) {
 	foreach my $schr (natsort %SNPcount){
 		foreach my $stepy (sort {$a <=> $b} keys %{$SNPcount{$schr}}){
 			my $finalAF = $AFmin{$schr}{$stepy} + $AFmax{$schr}{$stepy};
-			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));
+			my $heterozygosity = sprintf("%.3f",((2*$AFmin{$schr}{$stepy}*$AFmax{$schr}{$stepy})/($finalAF*$finalAF)));  #calculating heterozygosity
 			my ($start, $end) = split(/\-/,$RUNTHRU{$schr}{$stepy});
 			my %alls = map {$_ => 1} split(",", $GENENAME{$schr}{$stepy});
 			my @array = map {$_; } sort {$a <=> $b || $a cmp $b} keys %alls ;
